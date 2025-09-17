@@ -11,6 +11,8 @@ interface Slide {
 
 const Presentation = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [presentationTitle, setPresentationTitle] = useState('Название презентации');
+  const [presentationSubtitle, setPresentationSubtitle] = useState('Подзаголовок или краткое описание');
 
   const slides: Slide[] = [
     {
@@ -18,9 +20,9 @@ const Presentation = () => {
       title: "Введение",
       content: (
         <div className="space-y-8 text-center">
-          <h2 className="text-5xl font-light mb-8">Название презентации</h2>
+          <h2 className="text-5xl font-light mb-8">{presentationTitle}</h2>
           <div className="space-y-4">
-            <p className="text-xl text-gray-600">Подзаголовок или краткое описание</p>
+            <p className="text-xl text-gray-600">{presentationSubtitle}</p>
             <p className="text-lg text-gray-500">Автор • Дата</p>
           </div>
         </div>
@@ -140,6 +142,22 @@ const Presentation = () => {
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
   };
+
+  // Fetch presentation title on page load
+  useEffect(() => {
+    const fetchTitle = async () => {
+      try {
+        const response = await fetch('https://functions.poehali.dev/eaf50df9-841d-4ccb-9de0-fcba31a5a2c4');
+        const data = await response.json();
+        setPresentationTitle(data.title);
+        setPresentationSubtitle(data.subtitle);
+      } catch (error) {
+        console.log('Используем дефолтное название');
+      }
+    };
+    
+    fetchTitle();
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
