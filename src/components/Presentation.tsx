@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import AgendaSlide from './AgendaSlide';
+import { generateGradient, GradientConfig } from '@/utils/gradientGenerator';
 
 interface Slide {
   id: number;
@@ -14,18 +15,53 @@ const Presentation = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [presentationTitle, setPresentationTitle] = useState('Название презентации');
   const [presentationSubtitle, setPresentationSubtitle] = useState('Подзаголовок или краткое описание');
+  const [backgroundGradient, setBackgroundGradient] = useState<GradientConfig | null>(null);
 
   const slides: Slide[] = [
     {
       id: 1,
       title: "Введение",
       content: (
-        <div className="space-y-8 text-center">
-          <h2 className="text-5xl font-light mb-8">{presentationTitle}</h2>
-          <div className="space-y-4">
-            <p className="text-xl text-gray-600">{presentationSubtitle}</p>
-            <p className="text-lg text-gray-500">Автор • Дата</p>
+        <div 
+          className="space-y-8 text-center relative overflow-hidden rounded-xl p-16 shadow-2xl"
+          style={{
+            background: backgroundGradient?.gradient || 'linear-gradient(135deg, #667eea, #764ba2)',
+            color: 'white'
+          }}
+        >
+          <div className="relative z-10">
+            <h2 className="text-5xl font-light mb-8 text-white drop-shadow-lg">{presentationTitle}</h2>
+            <div className="space-y-4">
+              <p className="text-xl text-white/90 drop-shadow">{presentationSubtitle}</p>
+              <p className="text-lg text-white/80 drop-shadow">Автор • Дата</p>
+            </div>
+            <div className="mt-8 flex justify-center gap-4">
+              <Button 
+                variant="secondary"
+                onClick={() => setBackgroundGradient(generateGradient('professional'))}
+                className="backdrop-blur-sm bg-white/20 border-white/30 text-white hover:bg-white/30"
+              >
+                <Icon name="Palette" size={16} className="mr-2" />
+                Новый фон
+              </Button>
+              <Button 
+                variant="secondary"
+                onClick={() => setBackgroundGradient(generateGradient('creative'))}
+                className="backdrop-blur-sm bg-white/20 border-white/30 text-white hover:bg-white/30"
+              >
+                <Icon name="Sparkles" size={16} className="mr-2" />
+                Креативный
+              </Button>
+            </div>
+            {backgroundGradient && (
+              <div className="mt-6 text-sm text-white/70">
+                <p>Тема: {backgroundGradient.theme} • Цвета: {backgroundGradient.colors.join(', ')}</p>
+              </div>
+            )}
           </div>
+          {/* Декоративные элементы */}
+          <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16"></div>
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-white/10 rounded-full translate-x-12 translate-y-12"></div>
         </div>
       )
     },
@@ -124,7 +160,7 @@ const Presentation = () => {
     setCurrentSlide(index);
   };
 
-  // Fetch presentation title on page load
+  // Fetch presentation title and generate initial gradient on page load
   useEffect(() => {
     const fetchTitle = async () => {
       try {
@@ -136,6 +172,9 @@ const Presentation = () => {
         console.log('Используем дефолтное название');
       }
     };
+    
+    // Генерируем красивый градиент при загрузке
+    setBackgroundGradient(generateGradient('professional'));
     
     fetchTitle();
   }, []);

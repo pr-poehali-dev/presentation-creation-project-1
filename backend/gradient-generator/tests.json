@@ -1,0 +1,50 @@
+{
+  "tests": [
+    {
+      "name": "Generate random gradient",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "gradient": "string",
+        "colors": ["string", "string"],
+        "direction": "string",
+        "theme": "string",
+        "variations": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Generate professional theme gradient",
+      "method": "GET",
+      "path": "/?theme=professional",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "gradient": "string",
+        "theme": "professional"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create custom gradient",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "colors": ["#ff0000", "#0000ff"],
+        "direction": "45deg"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "gradient": "string",
+        "custom": true
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle CORS preflight",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    }
+  ]
+}
