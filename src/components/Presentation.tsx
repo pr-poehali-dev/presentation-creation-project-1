@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import AgendaSlide from './AgendaSlide';
 
 interface Slide {
   id: number;
@@ -31,27 +32,7 @@ const Presentation = () => {
     {
       id: 2,
       title: "Содержание",
-      content: (
-        <div className="space-y-8">
-          <h2 className="text-4xl font-light text-center mb-12">План презентации</h2>
-          <div className="space-y-6">
-            {[
-              { number: "01", title: "Введение в тему", duration: "5 мин" },
-              { number: "02", title: "Основная часть", duration: "15 мин" },
-              { number: "03", title: "Ключевые моменты", duration: "10 мин" },
-              { number: "04", title: "Выводы и заключение", duration: "5 мин" }
-            ].map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border-l-2 border-blue-500 hover:bg-gray-50 transition-colors cursor-pointer">
-                <div className="flex items-center space-x-4">
-                  <span className="text-2xl font-light text-blue-500">{item.number}</span>
-                  <span className="text-xl">{item.title}</span>
-                </div>
-                <span className="text-gray-500">{item.duration}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )
+      content: <AgendaSlide />
     },
     {
       id: 3,

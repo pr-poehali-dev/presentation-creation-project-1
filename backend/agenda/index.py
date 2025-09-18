@@ -29,16 +29,16 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         if method == 'GET':
             # Connect to database
-            database_url = os.environ.get('DATABASE_URL')
-            if not database_url:
+            dsn = os.environ.get('DATABASE_DSN')
+            if not dsn:
                 return {
                     'statusCode': 500,
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Database URL not configured'})
+                    'body': json.dumps({'error': 'Database DSN not configured'})
                 }
             
-            conn = psycopg2.connect(database_url)
+            conn = psycopg2.connect(dsn)
             cursor = conn.cursor()
             
             # Create table if not exists and insert sample data

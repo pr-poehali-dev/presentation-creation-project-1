@@ -1,0 +1,21 @@
+{
+  "tests": [
+    {
+      "name": "Get agenda items from database",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "items": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle CORS preflight request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": ""
+    }
+  ]
+}
