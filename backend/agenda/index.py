@@ -29,52 +29,19 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         if method == 'GET':
             # Connect to database
-            dsn = os.environ.get('DATABASE_DSN')
+            dsn = os.environ.get('DATABASE_URL')
             if not dsn:
                 return {
                     'statusCode': 500,
                     'headers': {'Access-Control-Allow-Origin': '*'},
                     'isBase64Encoded': False,
-                    'body': json.dumps({'error': 'Database DSN not configured'})
+                    'body': json.dumps({'error': 'Database URL not configured'})
                 }
             
             conn = psycopg2.connect(dsn)
             cursor = conn.cursor()
             
-            # Create table if not exists and insert sample data
-            try:
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS presentation_agenda (
-                        id SERIAL PRIMARY KEY,
-                        number VARCHAR(10) NOT NULL,
-                        title VARCHAR(255) NOT NULL,
-                        duration VARCHAR(50) NOT NULL,
-                        sort_order INTEGER NOT NULL
-                    )
-                ''')
-                
-                # Check if table is empty and insert sample data
-                cursor.execute('SELECT COUNT(*) FROM presentation_agenda')
-                count = cursor.fetchone()[0]
-                
-                if count == 0:
-                    sample_data = [
-                        ('01', 'Введение в тему', '5 мин', 1),
-                        ('02', 'Основная часть', '15 мин', 2),
-                        ('03', 'Ключевые моменты', '10 мин', 3),
-                        ('04', 'Выводы и заключение', '5 мин', 4)
-                    ]
-                    
-                    for item in sample_data:
-                        cursor.execute(
-                            'INSERT INTO presentation_agenda (number, title, duration, sort_order) VALUES (%s, %s, %s, %s)',
-                            item
-                        )
-                
-                conn.commit()
-            except Exception as e:
-                conn.rollback()
-                print(f"Error setting up table: {e}")
+            # Table exists via migration, just fetch data
             
             # Fetch agenda items
             cursor.execute('''
