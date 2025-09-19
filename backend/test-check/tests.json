@@ -1,0 +1,15 @@
+{
+  "tests": [
+    {
+      "name": "Check rate limits",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "number": "1",
+        "status": "working"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

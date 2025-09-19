@@ -3,10 +3,10 @@ from typing import Dict, Any
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     '''
-    Тестовая функция для проверки системы тестирования
+    Проверка рейтлимитов и работы системы
     Args: event - dict с httpMethod, body, queryStringParameters
-          context - object с атрибутами request_id, function_name
-    Returns: HTTP response с числом "1"
+          context - object с атрибутами request_id, function_name  
+    Returns: HTTP response с результатом "1"
     '''
     method: str = event.get('httpMethod', 'GET')
     
@@ -23,7 +23,14 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'body': ''
         }
     
-    # Возвращаем просто "1"
+    # Простой ответ
+    result = {
+        'number': '1',
+        'status': 'working',
+        'method': method,
+        'timestamp': '2024-09-19'
+    }
+    
     return {
         'statusCode': 200,
         'headers': {
@@ -31,5 +38,5 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'Access-Control-Allow-Origin': '*'
         },
         'isBase64Encoded': False,
-        'body': json.dumps({'result': '1'})
+        'body': json.dumps(result)
     }
