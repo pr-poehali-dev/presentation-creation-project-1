@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
 import AgendaSlide from './AgendaSlide';
 import { generateGradient, GradientConfig } from '@/utils/gradientGenerator';
+import { useAuth } from '@/components/auth/AuthContext';
+import VKLoginButton from '@/components/auth/VKLoginButton';
 
 interface Slide {
   id: number;
@@ -12,6 +14,7 @@ interface Slide {
 }
 
 const Presentation = () => {
+  const { user, isAuthenticated, login, logout } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [presentationTitle, setPresentationTitle] = useState('Название презентации');
   const [presentationSubtitle, setPresentationSubtitle] = useState('Подзаголовок или краткое описание');
@@ -205,16 +208,48 @@ const Presentation = () => {
                 {currentSlide + 1} из {slides.length}
               </span>
             </div>
-            <div className="flex items-center space-x-2">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => goToSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentSlide ? 'bg-blue-600' : 'bg-gray-300 hover:bg-gray-400'
-                  }`}
+            
+            <div className="flex items-center space-x-4">
+              {/* User Profile or Login */}
+              {isAuthenticated && user ? (
+                <div className="flex items-center space-x-3">
+                  {user.avatar && (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  )}
+                  <span className="text-sm text-gray-700">{user.name}</span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={logout}
+                    className="text-xs"
+                  >
+                    Выйти
+                  </Button>
+                </div>
+              ) : (
+                <VKLoginButton 
+                  onSuccess={login}
+                  onError={(error) => console.error('Login error:', error)}
+                  className="text-sm py-2 px-4"
                 />
-              ))}
+              )}
+              
+              {/* Slide Navigation */}
+              <div className="flex items-center space-x-2">
+                {slides.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === currentSlide ? 'bg-blue-600' : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

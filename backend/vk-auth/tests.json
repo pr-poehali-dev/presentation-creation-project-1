@@ -1,0 +1,28 @@
+{
+  "tests": [
+    {
+      "name": "Test VK auth redirect",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 302,
+      "description": "Should redirect to VK OAuth when no code provided"
+    },
+    {
+      "name": "Test VK auth error handling",
+      "method": "GET", 
+      "path": "/?error=access_denied",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "VK authorization failed"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test OPTIONS CORS",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": ""
+    }
+  ]
+}
