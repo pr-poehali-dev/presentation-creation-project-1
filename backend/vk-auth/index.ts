@@ -4,7 +4,22 @@
  * Returns: HTTP response с токеном или редиректом
  */
 
-exports.handler = async (event, context) => {
+interface CloudFunctionEvent {
+    httpMethod: string;
+    headers: Record<string, string>;
+    queryStringParameters?: Record<string, string>;
+    body?: string;
+    isBase64Encoded: boolean;
+}
+
+interface CloudFunctionContext {
+    requestId: string;
+    functionName: string;
+    functionVersion: string;
+    memoryLimitInMB: number;
+}
+
+module.exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContext): Promise<any> => {
     const { httpMethod, queryStringParameters } = event;
     
     // Handle CORS OPTIONS request
@@ -100,70 +115,39 @@ exports.handler = async (event, context) => {
                 expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 дней
             })).toString('base64');
             
-            // Возвращаем HTML страницу, которая передаст данные в родительское окно
-            const html = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Авторизация...</title>
-</head>
-<body>
-    <script>
-        window.opener.postMessage({
-            type: 'VK_AUTH_SUCCESS',
-            token: '${sessionToken}',
-            user: ${JSON.stringify({
-                id: user.id,
-                name: `${user.first_name} ${user.last_name}`,
-                avatar: user.photo_100,
-                screen_name: user.screen_name,
-                email: tokenData.email
-            })}
-        }, '*');
-        window.close();
-    </script>
-    <p>Авторизация успешна! Это окно закроется автоматически...</p>
-</body>
-</html>`;
-            
+            // Возвращаем JSON ответ
             return {
                 statusCode: 200,
                 headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
+                    'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                body: html
+                body: JSON.stringify({
+                    success: true,
+                    token: sessionToken,
+                    user: {
+                        id: user.id,
+                        name: `${user.first_name} ${user.last_name}`,
+                        avatar: user.photo_100,
+                        screen_name: user.screen_name,
+                        email: tokenData.email
+                    }
+                })
             };
             
         } catch (error) {
             console.error('VK Auth Error:', error);
             
-            const errorHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Ошибка авторизации</title>
-</head>
-<body>
-    <script>
-        window.opener.postMessage({
-            type: 'VK_AUTH_ERROR',
-            error: '${error.message || 'Authentication failed'}'
-        }, '*');
-        setTimeout(() => window.close(), 3000);
-    </script>
-    <p>Ошибка авторизации: ${error.message}</p>
-    <p>Это окно закроется автоматически...</p>
-</body>
-</html>`;
-            
             return {
                 statusCode: 200,
                 headers: { 
-                    'Content-Type': 'text/html; charset=utf-8',
+                    'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*'
                 },
-                body: errorHtml
+                body: JSON.stringify({
+                    success: false,
+                    error: error.message || 'Authentication failed'
+                })
             };
         }
     }
