@@ -4,39 +4,7 @@
  * Returns: HTTP response с токеном или редиректом
  */
 
-interface CloudFunctionEvent {
-    httpMethod: string;
-    headers: Record<string, string>;
-    queryStringParameters?: Record<string, string>;
-    body?: string;
-    isBase64Encoded: boolean;
-}
-
-interface CloudFunctionContext {
-    requestId: string;
-    functionName: string;
-    functionVersion: string;
-    memoryLimitInMB: number;
-}
-
-interface VKTokenResponse {
-    access_token: string;
-    expires_in: number;
-    user_id: number;
-    email?: string;
-}
-
-interface VKUserResponse {
-    response: Array<{
-        id: number;
-        first_name: string;
-        last_name: string;
-        photo_100?: string;
-        screen_name?: string;
-    }>;
-}
-
-exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContext): Promise<any> => {
+exports.handler = async (event, context) => {
     const { httpMethod, queryStringParameters } = event;
     
     // Handle CORS OPTIONS request
@@ -55,11 +23,15 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
     
     const VK_APP_ID = process.env.VK_APP_ID;
     const VK_APP_SECRET = process.env.VK_APP_SECRET;
+    const REDIRECT_URI = process.env.VK_REDIRECT_URI || 'https://your-domain.com/auth/callback';
     
     if (!VK_APP_ID || !VK_APP_SECRET) {
         return {
             statusCode: 500,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
             body: JSON.stringify({ error: 'VK credentials not configured' })
         };
     }
@@ -71,7 +43,10 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
         if (error) {
             return {
                 statusCode: 400,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
                 body: JSON.stringify({ 
                     error: 'VK authorization failed', 
                     details: error 
@@ -81,7 +56,7 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
         
         // Если нет кода - отправляем на авторизацию ВК
         if (!code) {
-            const redirectUri = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=popup&redirect_uri=${encodeURIComponent(process.env.VK_REDIRECT_URI || 'https://your-domain.com/auth/vk')}&scope=email&response_type=code&v=5.131`;
+            const redirectUri = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=popup&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=email&response_type=code&v=5.131`;
             
             return {
                 statusCode: 302,
@@ -95,10 +70,10 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
         
         try {
             // Обмениваем код на токен доступа
-            const tokenUrl = `https://oauth.vk.com/access_token?client_id=${VK_APP_ID}&client_secret=${VK_APP_SECRET}&redirect_uri=${encodeURIComponent(process.env.VK_REDIRECT_URI || 'https://your-domain.com/auth/vk')}&code=${code}`;
+            const tokenUrl = `https://oauth.vk.com/access_token?client_id=${VK_APP_ID}&client_secret=${VK_APP_SECRET}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&code=${code}`;
             
             const tokenResponse = await fetch(tokenUrl);
-            const tokenData: VKTokenResponse = await tokenResponse.json();
+            const tokenData = await tokenResponse.json();
             
             if (!tokenData.access_token) {
                 throw new Error('Failed to get access token');
@@ -107,7 +82,7 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
             // Получаем данные пользователя
             const userUrl = `https://api.vk.com/method/users.get?access_token=${tokenData.access_token}&fields=photo_100,screen_name&v=5.131`;
             const userResponse = await fetch(userUrl);
-            const userData: VKUserResponse = await userResponse.json();
+            const userData = await userResponse.json();
             
             if (!userData.response || userData.response.length === 0) {
                 throw new Error('Failed to get user data');
@@ -125,41 +100,80 @@ exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContex
                 expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 дней
             })).toString('base64');
             
+            // Возвращаем HTML страницу, которая передаст данные в родительское окно
+            const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Авторизация...</title>
+</head>
+<body>
+    <script>
+        window.opener.postMessage({
+            type: 'VK_AUTH_SUCCESS',
+            token: '${sessionToken}',
+            user: ${JSON.stringify({
+                id: user.id,
+                name: `${user.first_name} ${user.last_name}`,
+                avatar: user.photo_100,
+                screen_name: user.screen_name,
+                email: tokenData.email
+            })}
+        }, '*');
+        window.close();
+    </script>
+    <p>Авторизация успешна! Это окно закроется автоматически...</p>
+</body>
+</html>`;
+            
             return {
                 statusCode: 200,
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/html; charset=utf-8',
                     'Access-Control-Allow-Origin': '*'
                 },
-                body: JSON.stringify({
-                    success: true,
-                    token: sessionToken,
-                    user: {
-                        id: user.id,
-                        name: `${user.first_name} ${user.last_name}`,
-                        avatar: user.photo_100,
-                        screen_name: user.screen_name,
-                        email: tokenData.email
-                    }
-                })
+                body: html
             };
             
         } catch (error) {
             console.error('VK Auth Error:', error);
+            
+            const errorHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ошибка авторизации</title>
+</head>
+<body>
+    <script>
+        window.opener.postMessage({
+            type: 'VK_AUTH_ERROR',
+            error: '${error.message || 'Authentication failed'}'
+        }, '*');
+        setTimeout(() => window.close(), 3000);
+    </script>
+    <p>Ошибка авторизации: ${error.message}</p>
+    <p>Это окно закроется автоматически...</p>
+</body>
+</html>`;
+            
             return {
-                statusCode: 500,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    error: 'Authentication failed',
-                    details: error instanceof Error ? error.message : 'Unknown error'
-                })
+                statusCode: 200,
+                headers: { 
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                body: errorHtml
             };
         }
     }
     
     return {
         statusCode: 405,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+        },
         body: JSON.stringify({ error: 'Method not allowed' })
     };
 };
