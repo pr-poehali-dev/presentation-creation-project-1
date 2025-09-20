@@ -56,7 +56,7 @@ exports.handler = async (event, context) => {
         
         // Если нет кода - отправляем на авторизацию ВК
         if (!code) {
-            const redirectUri = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=popup&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=email&response_type=code&v=5.131`;
+            const redirectUri = `https://oauth.vk.com/authorize?client_id=${VK_APP_ID}&display=popup&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&v=5.131`;
             
             return {
                 statusCode: 302,
