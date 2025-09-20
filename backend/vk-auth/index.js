@@ -4,22 +4,7 @@
  * Returns: HTTP response с токеном или редиректом
  */
 
-interface CloudFunctionEvent {
-    httpMethod: string;
-    headers: Record<string, string>;
-    queryStringParameters?: Record<string, string>;
-    body?: string;
-    isBase64Encoded: boolean;
-}
-
-interface CloudFunctionContext {
-    requestId: string;
-    functionName: string;
-    functionVersion: string;
-    memoryLimitInMB: number;
-}
-
-module.exports.handler = async (event: CloudFunctionEvent, context: CloudFunctionContext): Promise<any> => {
+module.exports.handler = async (event, context) => {
     const { httpMethod, queryStringParameters } = event;
     
     // Handle CORS OPTIONS request
